@@ -1,0 +1,81 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken,  MIT Press.
+// File name: projects/05/CPU.hdl
+
+/**
+ * The Hack CPU (Central Processing unit),  consisting of an ALU, 
+ * two registers named A and D,  and a program counter named PC.
+ * The CPU is designed to fetch and execute instructions written in 
+ * the Hack machine language. In particular,  functions as follows:
+ * Executes the inputted instruction according to the Hack machine 
+ * language specification. The D and A in the language specification
+ * refer to CPU-resident registers,  while M refers to the external
+ * memory location addressed by A,  i.e. to Memory[A]. The inM input 
+ * holds the value of this location. If the current instruction needs 
+ * to write a value to M,  the value is placed in outM,  the address 
+ * of the target location is placed in the addressM output,  and the 
+ * writeM control bit is asserted. (When writeM==0,  any value may 
+ * appear in outM). The outM and writeM outputs are combinational: 
+ * they are affected instantaneously by the execution of the current 
+ * instruction. The addressM and pc outputs are clocked: although they 
+ * are affected by the execution of the current instruction,  they commit 
+ * to their new values only in the next time step. If reset==1 then the 
+ * CPU jumps to address 0 (i.e. pc is set to 0 in next time step) rather 
+ * than to the address resulting from executing the current instruction. 
+ */
+
+CHIP CPU {
+
+    IN  inM[16],          // M value input  (M = contents of RAM[A])
+        instruction[16],  // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],         // M value output
+        writeM,           // Write to M? 
+        addressM[15],     // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    	
+    	//opcode = instruction[15]
+    	//operation check bits = [13..14]
+    	//a or m bit = instruction[12]
+    	//control bits = instruction[6..11]
+    	//destination bits = instruction[3..5] 
+    	//jump bits = instruction[0..2]
+    	
+    	And(a=instruction[15], b=instruction[3], out=writeM);	// write to memory if d1 == 1 and opcode = 1
+    	
+    	And(a=instruction[4], b=instruction[15], out=loaddregister);//load d register if first ins bit is 1 and d2 == 1
+    	DRegister(in=aluout, load=loaddregister, out=outdregister); //load dregister if load==1
+	
+		Not(in=instruction[15], out=notopcode);
+		Or(a=notopcode, b=instruction[5], out=loadadd);//load a register if opcode == 0 or d3 == 1
+		Mux16(a=instruction,b=aluout,sel=instruction[15],out=aregin);//if opcode == 0 then inp = instruction else inp = alu output
+		ARegister(in=aregin, load=loadadd, out=outaregister, out[0..14]=addressM);// load a register if load == 1
+		
+		
+		Mux16(a=outaregister, b=inM, sel=instruction[12], out=aluin);//y = A register if control bit == 0 else y = Mregister			
+		ALU(x=outdregister, y=aluin, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluout, out=outM, zr=zr, ng=ng);
+		
+		And(a=instruction[1], b=zr, out=cond1);				// j2 & zr
+		And(a=instruction[2], b=ng, out=cond2); 				// j1 & ng 
+		Or(a=zr, b=ng, out=cond3a);							// zr or ng
+		Not(in=cond3a, out=cond3b);							// not zr and not ng
+		And(a=cond3b, b=instruction[0], out=cond3); 			// j3 & !(zr|ng)
+		And(a=instruction[0], b=instruction[1], out=cond4a);	// j1&j2
+		And(a=instruction[2], b=cond4a, out=cond4);			//j1&j2&j3
+		Or(a=cond1, b=cond2, out=cond1or2); 
+		Or(a=cond1or2, b=cond3, out=cond1or2or3);
+		Or(a=cond1or2or3, b=cond4, out=cond1or2or3or4);
+		And(a=cond1or2or3or4, b=instruction[15], out=load); 	// condtition to load pc
+		Not(in=load, out=incr);								//either load or increment
+		PC(in=outaregister, load=load, inc=incr, reset=reset, out[0..14]=pc); //operate pc
+		
+		
+		
+    // Put your code here:
+}
