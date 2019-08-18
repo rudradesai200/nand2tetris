@@ -17,7 +17,7 @@
 using namespace std;
 
 #define MAX_ADDRESS 100000
-#define MAX_SYMBOL_LENGTH 25
+#define MAX_SYMBOL_LENGTH 40
 #define MAX_SYMBOL_TABLE_ENTRIES 1024
 
 fstream inputFile;
@@ -61,11 +61,11 @@ class SymbolTableEntry{
 
 		//updates the symbolname
 		void UpdateName(const string name){
-
 		    if(name.size() <= MAX_SYMBOL_LENGTH)
+			// cout<<name<<endl;
 		      symbolname.append(name);
 		    else
-		      throw "symbol name too large\n";
+		      throw string("symbol name too large\n");
 
 		}
 
@@ -73,6 +73,7 @@ class SymbolTableEntry{
 		void UpdateSymbol(const string name, const int addr){
 		    if(addr==-1){
 		    	UpdateName(name);
+			// cout<<addr<<endl;
 		    }
 		    else{
 		    	UpdateName(name);
@@ -119,11 +120,34 @@ class SymbolTable{
 	      curr_symbols = 23;
 	    }
 
-	    void change(int last_ram_addr){
-	    	for(int i=22;i<curr_symbols;i++){
+	    void change(int instruction_count){
+	    	// cout<<instruction_count<<endl;
+	    	int lim = max(instruction_count,24576);
+	    	cout<<lim<<endl;
+	    	bool AddrArr[lim+1];
+	    	int x=0;
+	    	for(int i=0;i<=lim;i++){
+	    		AddrArr[i] = false;
+	    	}
+	    	for(int i=0;i<curr_symbols;i++){
+	    		if(symboltable[i].AddrAssigned()){
+	    			// cout<<symboltable[i].address<<endl;	
+	    			AddrArr[symboltable[i].address] = true;
+	    		}
+	    	}
+	    	for(int i=16;i<=lim;i++){
+	    		if(!AddrArr[i])
+	    			x = i;
+	    			break;
+	    			// cout<<x<<endl;
+	    	}
+	    	for(int i=0;i<curr_symbols;i++){
 	    		if(!symboltable[i].AddrAssigned()){
-	    			symboltable[i].UpdateAddress(max(last_ram_addr+1,16));
-	    			last_ram_addr++;
+	    			symboltable[i].UpdateAddress(x);
+	    			x++;
+	    			while(x<=lim && AddrArr[x]){
+	    				x++;
+	    			}
 	    		}
 	    	}
 	    }
@@ -144,13 +168,16 @@ class SymbolTable{
 
 	  //adds a new symbol to the symbol table if a new address is found else does nothing
 	    void CheckName(const string S){
+	    	// cout<<S<<endl;
 	      int pos = SymbolPresent(S);
 	      if(pos == -1){
 	        symboltable[curr_symbols].UpdateSymbol(S,-1);
+	      	// cout<<pos<<endl;
 	        // cout<<S<<endl;
 	        curr_symbols++;
 	        // cout <<S<<' '<<curr_symbols<<endl;
 	      }
+	      // cout<<pos<<endl;
 	      // ViewTable();
 	      // cout<<endl;
 	    }
@@ -196,6 +223,7 @@ class Parser{
 
 	//removes comments from curr_command and sets label for resolving symbol
 	void RemoveComments(){
+		// cout<<curr_line<<endl;
 	    int i=0;
 	    for(i=0; curr_line[i];i++){
 	      if(curr_line[i] == '/'){
@@ -210,30 +238,36 @@ class Parser{
 	    if(curr_command.size()<1){
 	      f=1;
 	    }
+	    // cout<<f<<endl;
 	}
 
 	//resolves symbol and checks for a label or address and sets label for writing in interfile
     void ResolveSymbol(){
+    	// cout<<curr_command<<endl;
 	    string addr;
 	    if(curr_command[0] == '@'){
 	      addr.append(curr_command,1,curr_command.size()-1);
-	      
+	      // cout<<addr<<endl;
 	      if((!(addr[0]>='0' && addr[0]<='9'))){
 	      	// cout<<addr<<endl;
 	        S.CheckName(addr);
 	      }
+	      instruction_count++;
 	    }
 	    else{
 	      if(curr_command[0] == '('){
 	        addr.append(curr_command,1,curr_command.size()-2);
 	        // cout<<addr<<endl;
 	        S.AddLabel(addr,instruction_count);
-	        last_ram_addr = instruction_count;
-	        instruction_count--;
+	        // last_ram_addr = instruction_count;
+	        // instruction_count--;
 	        notlabel = false;
 	      }
+	      else{
+	      	instruction_count++;
+	      }
 	    }
-	    instruction_count++;
+	    
     }
 
 	//processes input file to create inter file
@@ -241,6 +275,7 @@ class Parser{
 	  	int i=0;
 	    while(getline(inputFile,curr_line)){
 	      if(curr_line!=""){
+	      	// cout<<i<<endl;
 	      	notlabel = true;
 	        // cout<<"removing spaces"<<endl;
 	        RemoveWhiteSpace();
@@ -251,16 +286,19 @@ class Parser{
 	        if(f==0){
 	        	// cout<<i<<endl;
 	        	ResolveSymbol();
+	        	// cout<<i<<endl;
 	        	if(notlabel)
 	        		interFile << curr_command <<endl;
 	        	i++;
 	          	// instruction_count++;
 	        }
 	      }
+	      // cout<<i<<endl;
 	      curr_command.clear();
 	      curr_line.clear();
 	    }
-	    S.change(last_ram_addr);
+	    S.change(instruction_count);
+	    // cout<<i<<endl;
   	}
 };
 
@@ -335,34 +373,28 @@ class Converter{
 	      return "000";
 	    }
 	    else{
-	      int d[3];
-	      d[0]=d[1]=d[2]=0;
-	      if(mnemonics.find("G") != std::string::npos){
-	        d[2]=1;
+	      if(mnemonics=="JGT"){
+	        return "001";
 	      }
-	      if(mnemonics.find("L") != std::string::npos){
-	        d[0]=1;
+	      if(mnemonics=="JEQ"){
+	        return "010";
 	      }
-	      if(mnemonics.find("E") != std::string::npos){
-	        d[1]=1;
+	      if(mnemonics=="JGE"){
+	        return "011";
+	      }
+	      if(mnemonics=="JLT"){
+	        return "100";
+	      }
+	      if(mnemonics=="JNE"){
+	        return "101";
 	      }
 	      if(mnemonics=="JMP"){
 	        return "111";
 	      }
-	      if(mnemonics=="JNQ"){
-	        return "101";
+	      if(mnemonics=="JLE"){
+	        return "110";
 	      }
-
-	      string returnstring;
-	      for(int i=0;i<3;i++){
-
-	        if(d[i] == 0)
-	        	returnstring.append(1,'0');
-	        else
-	        	returnstring.append(1,'1');
-	      }
-	      return returnstring;
-	    }
+	  	}
 	}
 
 	//converts Cstring to its corresponding binary
@@ -538,6 +570,6 @@ int main(int arc,char *argv[]){
   cout<<"Assembling successfull\n";
   interFile.close();
   outFile.close();
-  remove("interfile.txt");
+  // remove("interfile.txt");
   // S.ViewTable();
 }
