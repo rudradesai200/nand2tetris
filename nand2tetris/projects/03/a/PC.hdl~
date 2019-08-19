@@ -10,11 +10,6 @@
  * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
  * else                    out[t+1] = out[t]
  */
- 
- /****************************
- * Author : Rudra Desai      *
- * Program : Program Counter *
- ****************************/
 
 CHIP PC {
     IN in[16],load,inc,reset;
