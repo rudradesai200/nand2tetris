@@ -12,8 +12,11 @@
 #include<string>
 #include<algorithm>
 #include<math.h>
+#include<string.h>
 
 using namespace std;
+
+#define MAX_MEMORY 24576
 
 fstream inputFile;
 fstream interFile;
@@ -39,19 +42,349 @@ void split(const string& str, const string& delim, vector<string>& parts) {
   }
 }
 */
+
+bool present(string haystack, string needl, int start,int end){
+  if(needl.size() != (end-start+1)){
+    throw "illegal use of function present";
+  }
+  int j=0;
+  for(int i=start;i<=end;i++){
+    if(haystack[i]!=needl[j]){
+      return false;
+    }
+    j++;
+  }
+  return true;
+}
+
+void extractSegVal(string curr_command,string type,string& segment,string& value,int* value_int){
+  int len = type.size();
+  // cout<<curr_command<<endl;
+  for(int i=len;i<curr_command.size();i++){
+    if((curr_command[i]>='0' && curr_command[i]<='9')){
+      value.append(1,curr_command[i]);
+    }
+    else{
+      segment.append(1,curr_command[i]);
+    }
+  }
+  int l = value.size();
+  if(l == 1){
+    *value_int = value[0]-'0';
+    }
+  else{
+        for(int i=0;i<l;i++){
+          *value_int = (value[i]-'0')*pow(10,(l-i-1));
+        }
+  }
+  // cout<<segment<<'\t'<<value<<endl;
+}
+
+void printifconditionalsblock(string jump_type,int A_LABEL){
+  interFile<<"@SP"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"A=A-1"<<endl;
+  interFile<<"D=M"<<endl;
+  interFile<<"A=A-1"<<endl;
+  interFile<<"D=M-D"<<endl;
+  interFile<<"@A_LABEL_"<<A_LABEL<<endl;
+  interFile<<"D;"<<jump_type<<endl;
+  interFile<<"D=0"<<endl;
+  interFile<<"@A_LABEL_"<<A_LABEL+1<<endl;
+  interFile<<"0;JMP"<<endl;
+  interFile<<"(A_LABEL_"<<A_LABEL<<')'<<endl;
+  interFile<<"D=-1"<<endl;
+  interFile<<"(A_LABEL_"<<A_LABEL+1<<')'<<endl;
+  interFile<<"@SP"<<endl;
+  interFile<<"M=M-1"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"A=A-1"<<endl;
+  interFile<<"M=D"<<endl;
+}
+
+void printarithsubcommands(string arrith_command_type){
+  interFile<<"@SP"<<endl;
+  interFile<<"M=M-1"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"D=M"<<endl;
+  interFile<<"A=A-1"<<endl;
+  interFile<<"M="<<arrith_command_type<<endl;
+}
+
+void printpushsubcommands(string push_type,int A_LABEL,string value){
+  interFile<<"@"<<push_type<<endl;//value of arg base
+  interFile<<"D=M"<<endl;
+  interFile<<"@R13"<<endl;//stored it in R13
+  interFile<<"M=D-1"<<endl;
+  interFile<<"@"<<value<<endl;//took the value to increment
+  interFile<<"D=A+1"<<endl;
+  interFile<<"(loop."<<A_LABEL<<')'<<endl;//adding that value to A
+  interFile<<"D=D-1"<<endl;
+  interFile<<"@R13"<<endl;
+  interFile<<"M=M+1"<<endl;
+  interFile<<"@loop."<<A_LABEL<<endl;
+  interFile<<"D;JNE"<<endl;
+  interFile<<"@R13"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"D=M"<<endl;
+  interFile<<"@SP"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"M=D"<<endl;
+  interFile<<"@SP"<<endl;
+  interFile<<"M=M+1"<<endl;
+}
+
+void printpopsubcommands(string push_type,int A_LABEL,string value){
+  interFile<<"@"<<push_type<<endl;//value of command base
+  interFile<<"D=M"<<endl;//stored the address of base in D
+  interFile<<"@R13"<<endl;//storing it in R13
+  interFile<<"M=D-1"<<endl;
+  interFile<<"@"<<value<<endl;//took the value to increment
+  interFile<<"D=A+1"<<endl;
+  interFile<<"(loop."<<A_LABEL<<')'<<endl;//adding that value to A
+  interFile<<"D=D-1"<<endl;
+  interFile<<"@R13"<<endl;
+  interFile<<"M=M+1"<<endl;
+  interFile<<"@loop."<<A_LABEL<<endl;
+  interFile<<"D;JNE"<<endl;
+  interFile<<"@SP"<<endl;
+  interFile<<"M=M-1"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"D=M"<<endl;
+  interFile<<"@R13"<<endl;
+  interFile<<"A=M"<<endl;
+  interFile<<"M=D"<<endl;
+}
 class Coder{
 public:
+  int A_LABEL;
   void WriteArithmetic(string curr_command){
+    if(curr_command == "add"){
+      printarithsubcommands("D+M");
+    }
 
+      if(curr_command == "sub"){
+      printarithsubcommands("M-D");
+      }
+
+      if(curr_command == "neg"){
+      interFile<<"@SP"<<endl;
+      interFile<<"A=M-1"<<endl;
+      interFile<<"M=-M"<<endl;
+      }
+
+      if(curr_command == "eq"){
+      printifconditionalsblock("JEQ",A_LABEL);
+      A_LABEL+=2;
+      }
+
+      if(curr_command == "gt"){
+      printifconditionalsblock("JGT",A_LABEL);
+      A_LABEL+=2;
+      }
+
+      if(curr_command == "lt"){
+      printifconditionalsblock("JLT",A_LABEL);
+      A_LABEL+=2;
+      }
+
+      if(curr_command == "and"){
+      printarithsubcommands("D&M");
+      }
+
+      if(curr_command == "or"){
+      printarithsubcommands("D|M");
+      }
+
+      if(curr_command == "not"){
+      interFile<<"@SP"<<endl;
+      interFile<<"A=M-1"<<endl;
+      interFile<<"M=!M"<<endl;
+      }
+    A_LABEL++;
   }
   void WritePush(string curr_command){
+    string segment,value;
+    int value_int;
+    extractSegVal(curr_command,"push",segment,value,&value_int);
+    cout<<segment<<'\t'<<value<<endl;
+      if(segment == "argument"){
+        printpushsubcommands("ARG",A_LABEL,value);
+        A_LABEL++;
+      }
 
-  }
+      if(segment == "local"){
+      // if(value )
+      printpushsubcommands("LCL",A_LABEL,value);
+      A_LABEL++;
+      }
+      if(segment == "static"){
+        interFile<<"@16"<<endl;//value of arg base
+        interFile<<"D=A"<<endl;
+        interFile<<"@R13"<<endl;//stored it in R13
+        interFile<<"M=D-1"<<endl;
+        interFile<<"@"<<value<<endl;//took the value to increment
+        interFile<<"D=A+1"<<endl;
+        interFile<<"(loop."<<A_LABEL<<')'<<endl;//adding that value to A
+        interFile<<"D=D-1"<<endl;
+        interFile<<"@R13"<<endl;
+        interFile<<"M=M+1"<<endl;
+        interFile<<"@loop."<<A_LABEL<<endl;
+        interFile<<"D;JNE"<<endl;
+        interFile<<"@R13"<<endl;
+        interFile<<"A=M"<<endl;
+        interFile<<"D=M"<<endl;
+        interFile<<"@SP"<<endl;
+        interFile<<"A=M"<<endl;
+        interFile<<"M=D"<<endl;
+        interFile<<"@SP"<<endl;
+        interFile<<"M=M+1"<<endl;
+        A_LABEL++;
+      }
+      if(segment == "constant"){
+        interFile<<"@"<<value<<endl;//value of arg base
+        interFile<<"D=A"<<endl;
+        interFile<<"@SP"<<endl;//stored it in R13
+        interFile<<"A=M"<<endl;
+        interFile<<"M=D"<<endl;//took the value to increment
+        interFile<<"@SP"<<endl;
+        interFile<<"M=M+1"<<endl;
+      }
+      if(segment == "this"){
+        printpushsubcommands("THIS",A_LABEL,value);
+        A_LABEL++;
+      }
+      if(segment == "that"){
+        printpushsubcommands("THAT",A_LABEL,value);
+        A_LABEL++;
+      }
+      if(segment == "pointer"){
+        if(value_int == 0){
+          interFile<<"@THIS"<<endl;
+          interFile<<"D=M"<<endl;
+          interFile<<"@SP"<<endl;
+          interFile<<"A=M"<<endl;
+          interFile<<"M=D"<<endl;
+          interFile<<"@SP"<<endl;
+          interFile<<"M=M+1"<<endl;
+        }
+        else{
+          if(value_int == 1){
+            interFile<<"@THAT"<<endl;
+            interFile<<"D=M"<<endl;
+            interFile<<"@SP"<<endl;
+            interFile<<"A=M"<<endl;
+            interFile<<"M=D"<<endl;
+            interFile<<"@SP"<<endl;
+            interFile<<"M=M+1"<<endl;
+          }
+          else{
+            throw "illegal use of pointer\n";
+          }
+        }
+      }
+      if(segment == "temp"){
+        if(value_int<=7){
+          interFile<<"@R"<<to_string(5+value_int)<<endl;
+          interFile<<"D=M"<<endl;
+          interFile<<"@SP"<<endl;
+          interFile<<"A=M"<<endl;
+          interFile<<"M=D"<<endl;
+          interFile<<"@SP"<<endl;
+          interFile<<"M=M+1"<<endl;
+        }
+        else{
+          throw "illegal use of temp\n";
+        }
+      }
+    }
   void WritePop(string curr_command){
+      string segment,value;
+      int value_int;
+      extractSegVal(curr_command,"pop",segment,value,&value_int);
+      cout<<segment<<'\t'<<value<<endl;
+      if(segment == "argument"){
+        printpopsubcommands("ARG",A_LABEL,value);
+        A_LABEL++;
+      }
 
-  }
-
+      if(segment == "local"){
+      // if(value )
+      printpopsubcommands("LCL",A_LABEL,value);
+      A_LABEL++;
+      }
+      if(segment == "static"){
+        interFile<<"@16"<<endl;//value of command base
+        interFile<<"D=A"<<endl;//stored the address of base in D
+        interFile<<"@R13"<<endl;//storing it in R13
+        interFile<<"M=D-1"<<endl;
+        interFile<<"@"<<value<<endl;//took the value to increment
+        interFile<<"D=A+1"<<endl;
+        interFile<<"(loop."<<A_LABEL<<')'<<endl;//adding that value to A
+        interFile<<"D=D-1"<<endl;
+        interFile<<"@R13"<<endl;
+        interFile<<"M=M+1"<<endl;
+        interFile<<"@loop."<<A_LABEL<<endl;
+        interFile<<"D;JNE"<<endl;
+        interFile<<"@SP"<<endl;
+        interFile<<"M=M-1"<<endl;
+        interFile<<"A=M"<<endl;
+        interFile<<"D=M"<<endl;
+        interFile<<"@R13"<<endl;
+        interFile<<"A=M"<<endl;
+        interFile<<"M=D"<<endl;
+        A_LABEL++;
+      }
+      if(segment == "constant"){
+        throw "pop has no 'constant' segment\n";
+      }
+      if(segment == "this"){
+        printpopsubcommands("THIS",A_LABEL,value);
+        A_LABEL++;
+      }
+      if(segment == "that"){
+        printpopsubcommands("THAT",A_LABEL,value);
+        A_LABEL++;
+      }
+      if(segment == "pointer"){
+        if(value_int == 0){
+          interFile<<"@SP"<<endl;
+          interFile<<"M=M-1"<<endl;
+          interFile<<"A=M"<<endl;
+          interFile<<"D=M"<<endl;
+          interFile<<"@THIS"<<endl;
+          interFile<<"M=D"<<endl;
+        }
+        else{
+          if(value_int == 1){
+            interFile<<"@SP"<<endl;
+            interFile<<"M=M-1"<<endl;
+            interFile<<"A=M"<<endl;
+            interFile<<"D=M"<<endl;
+            interFile<<"@THAT"<<endl;
+            interFile<<"M=D"<<endl;
+          }
+          else{
+            throw "illegal use of pointer\n";
+          }
+        }
+      }
+      if(segment == "temp"){
+        if(value_int<=7){
+          interFile<<"@SP"<<endl;
+          interFile<<"M=M-1"<<endl;
+          interFile<<"A=M"<<endl;
+          interFile<<"D=M"<<endl;
+          interFile<<"@R"<<to_string(5+value_int)<<endl;
+          interFile<<"M=D"<<endl;
+        }
+        else{
+          throw "temp limit out of range\n";
+        }
+      }
+    }
 };
+Coder C;
 class Parser{
   public:
 	  int f=0;
@@ -107,6 +440,7 @@ class Parser{
           RemoveWhiteSpace();
           RemoveComments();
           if(f==0){
+            // cout<<curr_command<<endl;
             SetCommandType();
             switch (type) {
               case C_ARITHMETIC:
@@ -131,8 +465,15 @@ class Parser{
 Parser P;
 
 int main(int argc,char* argv[]){
-  inputFile.open(argv[1],ios::in);
-  interFile.open("interfile.txt",ios::out);
+  char inputname[100];
+  strcpy(inputname,argv[1]);
+  strcat(inputname,".vm");
+  inputFile.open(inputname,ios::in);
+  cout<<inputname<<endl;
+  strcpy(inputname,argv[1]);
+  strcat(inputname,".asm");
+  interFile.open(inputname,ios::out);
+  cout<<inputname<<endl;
   P.ProcessInputFile();
   interFile.close();
   inputFile.close();
