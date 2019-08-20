@@ -326,6 +326,31 @@ public:
 			}
 		}
     }
+    
+    //writes label command to outfile
+    void WriteLabel(string curr_command){
+    	string label;
+    	label.append(curr_command,5,curr_command.size()-5);
+    	outFile << "("<<label<<")"<<endl;
+    }
+    
+    void WriteGoto(string curr_command){
+    	string label;
+    	label.append(curr_command,4,curr_command.size()-4);
+    	outFile <<"@"<<label<<endl;
+    	outFile<<"0;JMP"<<endl;
+    }
+    
+    void WriteIfGoto(string curr_command){
+    	string label;
+    	label.append(curr_command,7,curr_command.size()-7);
+    	outFile<<"@SP"<<endl;
+    	outFile<<"M=M-1"<<endl;
+    	outFile<<"A=M"<<endl;
+    	outFile<<"D=M"<<endl;
+    	outFile<<"@"<<label<<endl;
+    	outFile<<"D;JGT"<<endl;
+    }
 };
 Coder C;
 
@@ -381,20 +406,24 @@ class Parser{
 
 		//sets command type and process thereby
 		void SetCommandType(){
-		if(curr_command.size() <=3){
-		type = C_ARITHMETIC;
-		// C.WriteArithmetic(curr_command);
-		}
-		else{
-		if(present(curr_command,"push",0,3)){
-		  type = C_PUSH;
-		  // C.WritePush(curr_command);
-		}
-		if(present(curr_command,"pop",0,2)){
-		  type = C_POP;
-		  // C.WritePop(curr_command);
-		}
-		}
+			if(curr_command.size() <=3){
+				type = C_ARITHMETIC;
+			}
+			if(present(curr_command,"push",0,3)){
+			  type = C_PUSH;
+			}
+			if(present(curr_command,"pop",0,2)){
+			  type = C_POP;
+			}
+			if(present(curr_command,"label",0,4)){
+				type = C_LABEL;
+			}
+			if(present(curr_command,"goto",0,3)){
+				type = C_GOTO;
+			}
+			if(present(curr_command,"if-goto",0,6)){
+				type = C_IF;
+			}
 		}
 
 		//takes line by line commands and processes it
@@ -414,6 +443,15 @@ class Parser{
 			      break;
 			      case C_POP:
 			      C.WritePop(curr_command);
+			      break;
+			      case C_LABEL:
+			      C.WriteLabel(curr_command);
+			      break;
+			      case C_GOTO:
+			      C.WriteGoto(curr_command);
+			      break;
+			      case C_IF:
+			      C.WriteIfGoto(curr_command);
 			      break;
 			    }
 			  }
