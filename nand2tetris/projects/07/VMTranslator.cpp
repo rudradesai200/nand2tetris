@@ -351,6 +351,73 @@ public:
     	outFile<<"@"<<label<<endl;
     	outFile<<"D;JGT"<<endl;
     }
+    
+    void push_call_subcommands(string push_type){
+    	 outFile<<"@"<<push_type<<endl;
+    	 outFile<<"D=M"<<endl;
+    	 outFile<<"@SP"<<endl;
+    	 outFile<<"A=M"<<endl;
+    	 outFile<<"M=D"<<endl;
+    	 outFile<<"@SP"<<endl;
+    	 outFile<<"M=M+1"<<endl;
+    }
+    
+    void WriteCall(string curr_command){
+    	 string funcname,lcl_vars;
+    	 int lcl_vars_int=0;
+    	 extractSegVal(curr_command,"call",funcname,lcl_vars,&lcl_vars_int);
+    	 
+    	 //push return address
+    	 outFile<<"@label"<<funcname<<"_"<<A_LABEL<<endl;
+    	 outFile<<"D=A"<<endl;
+    	 outFile<<"@SP"<<endl;
+    	 outFile<<"A=M"<<endl;
+    	 outFile<<"M=D"<<endl;
+    	 outFile<<"@SP"<<endl;
+    	 outFile<<"M=M+1"<<endl;
+    	 
+    	 push_call_subcommands("LCL");
+    	 push_call_subcommands("ARG");
+    	 push_call_subcommands("THIS");
+    	 push_call_subcommands("THAT");
+    	 
+    	 //compute ARG = SP - n - 5
+    	 outFile<<"@SP"<<endl;
+    	 outFile<<"D=M"<<endl;
+    	 outFile<<"@"<<lcl_vars<<endl;
+    	 outFile<<"D=D-A"<<endl;
+    	 outFile<<"@5"<<endl;
+    	 outFile<<"D=D-A"<<endl;
+    	 outFile<<"@ARG"<<endl;
+    	 outFile<<"M=D"<<endl;
+			
+		//LCL = SP
+		 outFile<<"@SP"<<endl;
+		 outFile<<"D=M"<<endl;
+		 outFile<<"@LCL"<<endl;
+		 outFile<<"M=D"<<endl;
+		 
+		 //goto f
+		 outFile<<"@"<<funcname<<endl;
+		 outFile<<"0;JMP"<<endl;
+		 
+		 //generate label for calling function
+		 outFile<<"(label"<<funcname<<"_"<<A_LABEL<<endl;
+		 
+		 A_LABEL++;
+    }
+    
+    void WriteReturn(string curr_command){
+    	
+    	//FRAME = LCL
+    	 outFile<<"@LCL"<<endl;
+		 outFile<<"D=M"<<endl;
+		 outFile<<"@R13"<<endl;
+		 outFile<<"M=D"<<endl;
+		 
+		 
+    }
+    
 };
 Coder C;
 
@@ -424,6 +491,15 @@ class Parser{
 			if(present(curr_command,"if-goto",0,6)){
 				type = C_IF;
 			}
+			if(present(curr_command,"function",0,7)){
+				type = C_FUNCTION;
+			}
+			if(present(curr_command,"return",0,5)){
+				type = C_RETURN;
+			}
+			if(present(curr_command,"call",0,3)){
+				type = C_CALL;
+			}
 		}
 
 		//takes line by line commands and processes it
@@ -452,6 +528,15 @@ class Parser{
 			      break;
 			      case C_IF:
 			      C.WriteIfGoto(curr_command);
+			      break;
+			      case C_FUNCTION:
+			      C.WriteFunction(curr_command);
+			      break;
+			      case C_RETURN:
+			      C.WriteReturn(curr_command);
+			      break;
+			      case C_CALL:
+			      C.WriteCall(curr_command);
 			      break;
 			    }
 			  }
