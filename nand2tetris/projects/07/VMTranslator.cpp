@@ -362,13 +362,27 @@ public:
     	 outFile<<"M=M+1"<<endl;
     }
     
-    void WriteCall(string curr_command){
-    	 string funcname,lcl_vars;
-    	 int lcl_vars_int=0;
-    	 extractSegVal(curr_command,"call",funcname,lcl_vars,&lcl_vars_int);
+    void WriteFunction(string curr_command){
+    	string funcname,lcl_vars;
+	 	int lcl_vars_int=0;
+		extractSegVal(curr_command,"call",funcname,lcl_vars,&lcl_vars_int);
+
+		//create label for funcname
+		outFile<<"("<<funcname<<")"<<endl;
+
+		//push 0 k times
+		for(int i=0;i<lcl_vars_int;i++){
+			WritePush("pushconstant0");
+		}
+    }
+
+    void WriteCall(string curr_command,string filename){
+    	 string funcname,args_pushed;
+    	 int args_pushed_int=0;
+    	 extractSegVal(curr_command,"call",funcname,args_pushed,&args_pushed_int);
     	 
     	 //push return address
-    	 outFile<<"@label"<<funcname<<"_"<<A_LABEL<<endl;
+    	 outFile<<"@label"<<filename<<"_"<<A_LABEL<<endl;
     	 outFile<<"D=A"<<endl;
     	 outFile<<"@SP"<<endl;
     	 outFile<<"A=M"<<endl;
@@ -384,7 +398,7 @@ public:
     	 //compute ARG = SP - n - 5
     	 outFile<<"@SP"<<endl;
     	 outFile<<"D=M"<<endl;
-    	 outFile<<"@"<<lcl_vars<<endl;
+    	 outFile<<"@"<<args_pushed<<endl;
     	 outFile<<"D=D-A"<<endl;
     	 outFile<<"@5"<<endl;
     	 outFile<<"D=D-A"<<endl;
@@ -402,7 +416,7 @@ public:
 		 outFile<<"0;JMP"<<endl;
 		 
 		 //generate label for calling function
-		 outFile<<"(label"<<funcname<<"_"<<A_LABEL<<endl;
+		 outFile<<"(label"<<filename<<"_"<<A_LABEL<<")"<<endl;
 		 
 		 A_LABEL++;
     }
@@ -412,11 +426,69 @@ public:
     	//FRAME = LCL
     	 outFile<<"@LCL"<<endl;
 		 outFile<<"D=M"<<endl;
-		 outFile<<"@R13"<<endl;
+		 outFile<<"@15"<<endl;
 		 outFile<<"M=D"<<endl;
 		 
-		 
-    }
+		 //RET = *(FRAME _ 5)
+		 outFile<<"@5"<<endl;
+		 outFile<<"D=D-A"<<endl;
+		 outFile<<"A=D"<<endl;
+		 outFile<<"D=M"<<endl;
+		 outFile<<"@14"<<endl;
+		 outFile<<"M=D"<<endl;
+
+		 //*ARG = pop()
+		outFile<<"@SP"<<endl;
+		outFile<<"M=M-1"<<endl;
+		outFile<<"A=M"<<endl;
+		outFile<<"D=M"<<endl;
+		outFile<<"@ARG"<<endl;		 
+		outFile<<"A=M"<<endl;
+		outFile<<"M=D"<<endl;
+
+		//SP = ARG+1
+		outFile<<"@ARG"<<endl;
+		outFile<<"D=M+1"<<endl;
+		outFile<<"@SP"<<endl;
+		outFile<<"M=D"<<endl;
+
+		//THAT = *(FRAME - 1)
+		outFile<<"@15"<<endl;
+		outFile<<"M=M-1"<<endl;
+		outFile<<"A=M"<<endl;
+		outFile<<"D=M"<<endl;
+		outFile<<"@THAT"<<endl;
+		outFile<<"M=D"<<endl;
+
+		//THIS = *(FRAME - 2)
+		outFile<<"@15"<<endl;
+		outFile<<"M=M-1"<<endl;
+		outFile<<"A=M"<<endl;
+		outFile<<"D=M"<<endl;
+		outFile<<"@THIS"<<endl;
+		outFile<<"M=D"<<endl;
+
+		//ARG = *(FRAME-3)
+		outFile<<"@15"<<endl;
+		outFile<<"M=M-1"<<endl;
+		outFile<<"A=M"<<endl;
+		outFile<<"D=M"<<endl;
+		outFile<<"@ARG"<<endl;
+		outFile<<"M=D"<<endl;
+
+		// LCL = *(FRAME - 4)
+		outFile<<"@15"<<endl;
+		outFile<<"M=M-1"<<endl;
+		outFile<<"A=M"<<endl;
+		outFile<<"D=M"<<endl;
+		outFile<<"@LCL"<<endl;
+		outFile<<"M=D"<<endl;
+
+		//goto RET
+		outFile<<"@14"<<endl;
+		outFile<<"A=M"<<endl;
+		outFile<<"0;JMP"<<endl;
+	}
     
 };
 Coder C;
@@ -503,7 +575,7 @@ class Parser{
 		}
 
 		//takes line by line commands and processes it
-		void ProcessInputFile(){
+		void ProcessInputFile(string inputname){
 			while (getline(inputFile,curr_line)) {
 			  RemoveWhiteSpace();
 			  RemoveComments();
@@ -536,7 +608,7 @@ class Parser{
 			      C.WriteReturn(curr_command);
 			      break;
 			      case C_CALL:
-			      C.WriteCall(curr_command);
+			      C.WriteCall(curr_command,inputname);
 			      break;
 			    }
 			  }
@@ -549,23 +621,16 @@ Parser P;
 
 
 int main(int argc,char* argv[]){
-  char inputname[100];
+	char inputname[100];
 
-  strcpy(inputname,argv[1]);
-  strcat(inputname,".vm");
-  inputFile.open(inputname,ios::in);
-  cout<<"inputFile opened\n";
-
-  strcpy(inputname,argv[1]);
-  strcat(inputname,".asm");
-  cout<<"outFile opened\n";
-  
-  outFile.open(inputname,ios::out);
-  cout<<"processing started"<<endl;
-
-  P.ProcessInputFile();
-  cout<<"conversion successful\n";
-  outFile.close();
-  inputFile.close();
-
+	inputFile.open(argv[2],ios::in);
+	outFile.open(argv[1],ios::out);
+	P.ProcessInputFile(argv[2]);
+	inputFile.close();
+	inputFile.open(argv[3],ios::in);
+	P.ProcessInputFile(argv[3]);
+	outFile.close();
+	inputFile.close();
+	
 }
+ 
