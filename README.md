@@ -3,6 +3,6 @@ which is available on the site https://www.nand2tetris.org.
 
 All the solutions are written by Rudra Desai.
 
-Last Solution Updated: projects/07/VMTranslator.cpp
-currently ongoing solution : projects/08/VMTranslator.cpp
+Last Solution Updated: projects/10/compiler1.cpp
+currently ongoing solution : projects/11/compiler2.cpp
 
