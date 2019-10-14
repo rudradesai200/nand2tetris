@@ -66,16 +66,14 @@ public:
 	  outFile<<"(A_LABEL_"<<A_LABEL+1<<')'<<endl;
 	  outFile<<"@SP"<<endl;
 	  outFile<<"M=M-1"<<endl;
-	  outFile<<"A=M"<<endl;
-	  outFile<<"A=A-1"<<endl;
+	  outFile<<"A=M-1"<<endl;
 	  outFile<<"M=D"<<endl;
 	}
 
 	//prints arithmetic commands for arrithmetic type
 	void print_sub_arithmetic_arith(string arrith_command_type){
 	  outFile<<"@SP"<<endl;
-	  outFile<<"M=M-1"<<endl;
-	  outFile<<"A=M"<<endl;
+	  outFile<<"AM=M-1"<<endl;
 	  outFile<<"D=M"<<endl;
 	  outFile<<"A=A-1"<<endl;
 	  outFile<<"M="<<arrith_command_type<<endl;
@@ -89,10 +87,9 @@ public:
 	  outFile<<"A=A+D"<<endl;
 	  outFile<<"D=M"<<endl;
 	  outFile<<"@SP"<<endl;
-	  outFile<<"A=M"<<endl;
-	  outFile<<"M=D"<<endl;
-	  outFile<<"@SP"<<endl;
 	  outFile<<"M=M+1"<<endl;
+	  outFile<<"A=M-1"<<endl;
+	  outFile<<"M=D"<<endl;
 	}
 
 	//prints pop commands for some types
@@ -105,8 +102,7 @@ public:
 	  outFile<<"@13"<<endl;
 	  outFile<<"M=D"<<endl;
 	  outFile<<"@SP"<<endl;
-	  outFile<<"M=M-1"<<endl;
-	  outFile<<"A=M"<<endl;
+	  outFile<<"AM=M-1"<<endl;
 	  outFile<<"D=M"<<endl;
 	  outFile<<"@13"<<endl;
 	  outFile<<"A=M"<<endl;
@@ -182,20 +178,18 @@ public:
 			outFile<<"A=A+D"<<endl;
 			outFile<<"D=M"<<endl;
 			outFile<<"@SP"<<endl;
-			outFile<<"A=M"<<endl;
-			outFile<<"M=D"<<endl;
-			outFile<<"@SP"<<endl;
 			outFile<<"M=M+1"<<endl;
+			outFile<<"A=M-1"<<endl;
+			outFile<<"M=D"<<endl;
 			A_LABEL++;
 		}
 		if(segment == "constant"){
 			outFile<<"@"<<value<<endl;//value of arg base
 			outFile<<"D=A"<<endl;
-			outFile<<"@SP"<<endl;//stored it in R13
-			outFile<<"A=M"<<endl;
-			outFile<<"M=D"<<endl;//took the value to increment
 			outFile<<"@SP"<<endl;
 			outFile<<"M=M+1"<<endl;
+			outFile<<"A=M-1"<<endl;
+			outFile<<"M=D"<<endl;
 		}
 		if(segment == "this"){
 			print_sub_push_commands("THIS",A_LABEL,value);
@@ -210,20 +204,18 @@ public:
 				outFile<<"@THIS"<<endl;
 				outFile<<"D=M"<<endl;
 				outFile<<"@SP"<<endl;
-				outFile<<"A=M"<<endl;
-				outFile<<"M=D"<<endl;
-				outFile<<"@SP"<<endl;
 				outFile<<"M=M+1"<<endl;
+				outFile<<"A=M-1"<<endl;
+				outFile<<"M=D"<<endl;
 			}
 		else{
 		  if(value_int == 1){
 			outFile<<"@THAT"<<endl;
 			outFile<<"D=M"<<endl;
 			outFile<<"@SP"<<endl;
-			outFile<<"A=M"<<endl;
-			outFile<<"M=D"<<endl;
-			outFile<<"@SP"<<endl;
 			outFile<<"M=M+1"<<endl;
+			outFile<<"A=M-1"<<endl;
+			outFile<<"M=D"<<endl;
 		  }
 		  else{
 		    throw "illegal use of pointer\n";
@@ -235,10 +227,9 @@ public:
 	      outFile<<"@R"<<to_string(5+value_int)<<endl;
 	      outFile<<"D=M"<<endl;
 	      outFile<<"@SP"<<endl;
-	      outFile<<"A=M"<<endl;
-	      outFile<<"M=D"<<endl;
-	      outFile<<"@SP"<<endl;
-	      outFile<<"M=M+1"<<endl;
+		  outFile<<"M=M+1"<<endl;
+	  	  outFile<<"A=M-1"<<endl;
+		  outFile<<"M=D"<<endl;
 	    }
 	    else{
 	      throw "illegal use of temp\n";
@@ -270,8 +261,7 @@ public:
 			outFile<<"@13"<<endl;
 			outFile<<"M=D"<<endl;
 			outFile<<"@SP"<<endl;
-			outFile<<"M=M-1"<<endl;
-			outFile<<"A=M"<<endl;
+			outFile<<"AM=M-1"<<endl;
 			outFile<<"D=M"<<endl;
 			outFile<<"@13"<<endl;
 			outFile<<"A=M"<<endl;
@@ -292,8 +282,7 @@ public:
 		if(segment == "pointer"){
 			if(value_int == 0){
 				outFile<<"@SP"<<endl;
-				outFile<<"M=M-1"<<endl;
-				outFile<<"A=M"<<endl;
+				outFile<<"AM=M-1"<<endl;
 				outFile<<"D=M"<<endl;
 				outFile<<"@THIS"<<endl;
 				outFile<<"M=D"<<endl;
@@ -301,8 +290,7 @@ public:
 			else{
 			  if(value_int == 1){
 				outFile<<"@SP"<<endl;
-				outFile<<"M=M-1"<<endl;
-				outFile<<"A=M"<<endl;
+				outFile<<"AM=M-1"<<endl;
 				outFile<<"D=M"<<endl;
 				outFile<<"@THAT"<<endl;
 				outFile<<"M=D"<<endl;
@@ -315,8 +303,7 @@ public:
 		if(segment == "temp"){
 			if(value_int<=7){
 				outFile<<"@SP"<<endl;
-				outFile<<"M=M-1"<<endl;
-				outFile<<"A=M"<<endl;
+				outFile<<"AM=M-1"<<endl;
 				outFile<<"D=M"<<endl;
 				outFile<<"@R"<<to_string(5+value_int)<<endl;
 				outFile<<"M=D"<<endl;
@@ -334,6 +321,7 @@ public:
     	outFile << "("<<label<<")"<<endl;
     }
     
+    //writes goto command to outfile
     void WriteGoto(string curr_command){
     	string label;
     	label.append(curr_command,4,curr_command.size()-4);
@@ -341,27 +329,18 @@ public:
     	outFile<<"0;JMP"<<endl;
     }
     
+    //writes if goto label to outfile
     void WriteIfGoto(string curr_command){
     	string label;
     	label.append(curr_command,7,curr_command.size()-7);
     	outFile<<"@SP"<<endl;
-    	outFile<<"M=M-1"<<endl;
-    	outFile<<"A=M"<<endl;
+    	outFile<<"AM=M-1"<<endl;
     	outFile<<"D=M"<<endl;
     	outFile<<"@"<<label<<endl;
     	outFile<<"D;JGT"<<endl;
     }
     
-    void push_call_subcommands(string push_type){
-    	 outFile<<"@"<<push_type<<endl;
-    	 outFile<<"D=M"<<endl;
-    	 outFile<<"@SP"<<endl;
-    	 outFile<<"A=M"<<endl;
-    	 outFile<<"M=D"<<endl;
-    	 outFile<<"@SP"<<endl;
-    	 outFile<<"M=M+1"<<endl;
-    }
-    
+    //writes function command to outfile
     void WriteFunction(string curr_command){
     	string funcname,lcl_vars;
 	 	int lcl_vars_int=0;
@@ -376,19 +355,29 @@ public:
 		}
     }
 
+    //helper function to writecall
+    void push_call_subcommands(string push_type){
+    	 outFile<<"@"<<push_type<<endl;
+    	 outFile<<"D=M"<<endl;
+    	 outFile<<"@SP"<<endl;
+    	 outFile<<"M=M+1"
+    	 outFile<<"A=M-1"<<endl;
+    	 outFile<<"M=D"<<endl;
+    }
+
+    //writes call command to outfile
     void WriteCall(string curr_command,string filename){
     	 string funcname,args_pushed;
     	 int args_pushed_int=0;
     	 extractSegVal(curr_command,"call",funcname,args_pushed,&args_pushed_int);
     	 
     	 //push return address
-    	 outFile<<"@label"<<filename<<"_"<<A_LABEL<<endl;
+    	 outFile<<"@label_"<<filename<<"_"<<A_LABEL<<endl;
     	 outFile<<"D=A"<<endl;
     	 outFile<<"@SP"<<endl;
-    	 outFile<<"A=M"<<endl;
+    	 outFile<<"M=M+1"
+    	 outFile<<"A=M-1"<<endl;
     	 outFile<<"M=D"<<endl;
-    	 outFile<<"@SP"<<endl;
-    	 outFile<<"M=M+1"<<endl;
     	 
     	 push_call_subcommands("LCL");
     	 push_call_subcommands("ARG");
@@ -416,8 +405,7 @@ public:
 		 outFile<<"0;JMP"<<endl;
 		 
 		 //generate label for calling function
-		 outFile<<"(label"<<filename<<"_"<<A_LABEL<<")"<<endl;
-		 
+		 outFile<<"(label_"<<filename<<"_"<<A_LABEL<<")"<<endl;
 		 A_LABEL++;
     }
     
@@ -429,7 +417,7 @@ public:
 		 outFile<<"@15"<<endl;
 		 outFile<<"M=D"<<endl;
 		 
-		 //RET = *(FRAME _ 5)
+		 //RET = *(FRAME - 5)
 		 outFile<<"@5"<<endl;
 		 outFile<<"D=D-A"<<endl;
 		 outFile<<"A=D"<<endl;
@@ -439,15 +427,13 @@ public:
 
 		 //*ARG = pop()
 		outFile<<"@SP"<<endl;
-		outFile<<"M=M-1"<<endl;
-		outFile<<"A=M"<<endl;
+		outFile<<"AM=M-1"<<endl;
 		outFile<<"D=M"<<endl;
 		outFile<<"@ARG"<<endl;		 
 		outFile<<"A=M"<<endl;
 		outFile<<"M=D"<<endl;
 
 		//SP = ARG+1
-		outFile<<"@ARG"<<endl;
 		outFile<<"D=M+1"<<endl;
 		outFile<<"@SP"<<endl;
 		outFile<<"M=D"<<endl;
