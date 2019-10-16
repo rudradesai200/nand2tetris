@@ -1,7 +1,10 @@
 #!/bin/bash
 read foldername
 read filename
-~/nand2tetris/nand2tetris/projects/07/VMTranslator.o ~/nand2tetris/nand2tetris/projects/07/$foldername/$filename $foldername/$filename.asm
-~/nand2tetris/nand2tetris/tools/CPUEmulator.sh ~/nand2tetris/nand2tetris/projects/07/$foldername/$filename.tst
-
+cd ~/nand2tetris/nand2tetris/projects/07/$foldername/
+~/nand2tetris/nand2tetris/projects/07/VMTranslator.o $filename.asm $filename
+~/nand2tetris/nand2tetris/tools/CPUEmulator.sh $filename.tst
+rm ~/nand2tetris/nand2tetris/projects/07/$foldername/$filename.asm
+rm ~/nand2tetris/nand2tetris/projects/07/$foldername/$filename.out
+cd ~/nand2tetris/nand2tetris/projects/07/
 #a file to make work check easy
