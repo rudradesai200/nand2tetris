@@ -65,8 +65,7 @@ public:
 	  outFile<<"D=-1"<<endl;
 	  outFile<<"(A_LABEL_"<<A_LABEL+1<<')'<<endl;
 	  outFile<<"@SP"<<endl;
-	  outFile<<"M=M-1"<<endl;
-	  outFile<<"A=M-1"<<endl;
+	  outFile<<"AM=M-1"<<endl;
 	  outFile<<"M=D"<<endl;
 	}
 
@@ -316,60 +315,40 @@ public:
     }
 
     //writes label command to outfile
-    void WriteLabel(string curr_command){
+    void WriteLabel(string curr_command,string filename){
     	string label;
     	label.append(curr_command,5,curr_command.size()-5);
+			label = filename + "_" + label;
     	outFile << "("<<label<<")"<<endl;
     }
-<<<<<<< HEAD
 
-=======
-    
     //writes goto command to outfile
->>>>>>> ff8cb124ffdf603d0c02b09e10e4fd173f39566f
-    void WriteGoto(string curr_command){
+    void WriteGoto(string curr_command,string filename){
     	string label;
     	label.append(curr_command,4,curr_command.size()-4);
+			label = filename + "_" + label;
     	outFile <<"@"<<label<<endl;
     	outFile<<"0;JMP"<<endl;
     }
-<<<<<<< HEAD
 
-=======
-    
     //writes if goto label to outfile
->>>>>>> ff8cb124ffdf603d0c02b09e10e4fd173f39566f
-    void WriteIfGoto(string curr_command){
+    void WriteIfGoto(string curr_command,string filename){
     	string label;
     	label.append(curr_command,7,curr_command.size()-7);
+			label = filename + "_" + label;
     	outFile<<"@SP"<<endl;
     	outFile<<"AM=M-1"<<endl;
     	outFile<<"D=M"<<endl;
     	outFile<<"@"<<label<<endl;
     	outFile<<"D;JGT"<<endl;
     }
-<<<<<<< HEAD
 
-    void push_call_subcommands(string push_type){
-    	 outFile<<"@"<<push_type<<endl;
-    	 outFile<<"D=M"<<endl;
-    	 outFile<<"@SP"<<endl;
-    	 outFile<<"A=M"<<endl;
-    	 outFile<<"M=D"<<endl;
-    	 outFile<<"@SP"<<endl;
-    	 outFile<<"M=M+1"<<endl;
-    }
-
-    void WriteFunction(string curr_command,string filename){
-=======
-    
     //writes function command to outfile
-    void WriteFunction(string curr_command){
->>>>>>> ff8cb124ffdf603d0c02b09e10e4fd173f39566f
+    void WriteFunction(string curr_command,string filename){
     	string funcname,lcl_vars;
 	 	int lcl_vars_int=0;
 		extractSegVal(curr_command,"function",funcname,lcl_vars,&lcl_vars_int);
-
+		funcname = filename + "_" + funcname;
 		//create label for funcname
 		outFile<<"("<<funcname<<")"<<endl;
 
@@ -384,7 +363,7 @@ public:
     	 outFile<<"@"<<push_type<<endl;
     	 outFile<<"D=M"<<endl;
     	 outFile<<"@SP"<<endl;
-    	 outFile<<"M=M+1"
+    	 outFile<<"M=M+1"<<endl;
     	 outFile<<"A=M-1"<<endl;
     	 outFile<<"M=D"<<endl;
     }
@@ -399,16 +378,10 @@ public:
     	 outFile<<"@label_"<<filename<<"_"<<A_LABEL<<endl;
     	 outFile<<"D=A"<<endl;
     	 outFile<<"@SP"<<endl;
-    	 outFile<<"M=M+1"
+    	 outFile<<"M=M+1"<<endl;
     	 outFile<<"A=M-1"<<endl;
     	 outFile<<"M=D"<<endl;
-<<<<<<< HEAD
-    	 outFile<<"@SP"<<endl;
-    	 outFile<<"M=M+1"<<endl;
 
-=======
-    	 
->>>>>>> ff8cb124ffdf603d0c02b09e10e4fd173f39566f
     	 push_call_subcommands("LCL");
     	 push_call_subcommands("ARG");
     	 push_call_subcommands("THIS");
@@ -436,10 +409,6 @@ public:
 
 		 //generate label for calling function
 		 outFile<<"(label_"<<filename<<"_"<<A_LABEL<<")"<<endl;
-<<<<<<< HEAD
-
-=======
->>>>>>> ff8cb124ffdf603d0c02b09e10e4fd173f39566f
 		 A_LABEL++;
     }
 
@@ -450,11 +419,7 @@ public:
 		 outFile<<"D=M"<<endl;
 		 outFile<<"@15"<<endl;
 		 outFile<<"M=D"<<endl;
-<<<<<<< HEAD
 
-=======
-		 
->>>>>>> ff8cb124ffdf603d0c02b09e10e4fd173f39566f
 		 //RET = *(FRAME - 5)
 		 outFile<<"@5"<<endl;
 		 outFile<<"D=D-A"<<endl;
@@ -617,13 +582,13 @@ class Parser{
 			      C.WritePop(curr_command);
 			      break;
 			      case C_LABEL:
-			      C.WriteLabel(curr_command);
+			      C.WriteLabel(curr_command,inputname);
 			      break;
 			      case C_GOTO:
-			      C.WriteGoto(curr_command);
+			      C.WriteGoto(curr_command,inputname);
 			      break;
 			      case C_IF:
-			      C.WriteIfGoto(curr_command);
+			      C.WriteIfGoto(curr_command,inputname);
 			      break;
 			      case C_FUNCTION:
 			      C.WriteFunction(curr_command,inputname);
