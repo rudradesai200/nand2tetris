@@ -161,7 +161,7 @@ public:
   	}
 
   	//writes push commands in the out file
-	void WritePush(string curr_command){
+	void WritePush(string curr_command,string filename){
 	    string segment,value;
 	    int value_int;
 	    extractSegVal(curr_command,"push",segment,value,&value_int);
@@ -176,10 +176,11 @@ public:
 		A_LABEL++;
 		}
 		if(segment == "static"){
-			outFile<<"@16"<<endl;//value of arg base
-			outFile<<"D=A"<<endl;
-			outFile<<"@"<<value<<endl;//took the value to increment
-			outFile<<"A=A+D"<<endl;
+			outFile<<"@"<<filename<<"."<<value<<endl;
+			// outFile<<"@16"<<endl;//value of arg base
+			// outFile<<"D=A"<<endl;
+			// outFile<<"@"<<value<<endl;//took the value to increment
+			// outFile<<"A=A+D"<<endl;
 			outFile<<"D=M"<<endl;
 			outFile<<"@SP"<<endl;
 			outFile<<"A=M"<<endl;
@@ -326,21 +327,21 @@ public:
 			}
 		}
     }
-    
+
     //writes label command to outfile
     void WriteLabel(string curr_command){
     	string label;
     	label.append(curr_command,5,curr_command.size()-5);
     	outFile << "("<<label<<")"<<endl;
     }
-    
+
     void WriteGoto(string curr_command){
     	string label;
     	label.append(curr_command,4,curr_command.size()-4);
     	outFile <<"@"<<label<<endl;
     	outFile<<"0;JMP"<<endl;
     }
-    
+
     void WriteIfGoto(string curr_command){
     	string label;
     	label.append(curr_command,7,curr_command.size()-7);
@@ -351,7 +352,7 @@ public:
     	outFile<<"@"<<label<<endl;
     	outFile<<"D;JGT"<<endl;
     }
-    
+
     void push_call_subcommands(string push_type){
     	 outFile<<"@"<<push_type<<endl;
     	 outFile<<"D=M"<<endl;
@@ -361,18 +362,18 @@ public:
     	 outFile<<"@SP"<<endl;
     	 outFile<<"M=M+1"<<endl;
     }
-    
-    void WriteFunction(string curr_command){
+
+    void WriteFunction(string curr_command,string filename){
     	string funcname,lcl_vars;
 	 	int lcl_vars_int=0;
-		extractSegVal(curr_command,"call",funcname,lcl_vars,&lcl_vars_int);
+		extractSegVal(curr_command,"function",funcname,lcl_vars,&lcl_vars_int);
 
 		//create label for funcname
 		outFile<<"("<<funcname<<")"<<endl;
 
 		//push 0 k times
 		for(int i=0;i<lcl_vars_int;i++){
-			WritePush("pushconstant0");
+			WritePush("pushconstant0",filename);
 		}
     }
 
@@ -380,21 +381,21 @@ public:
     	 string funcname,args_pushed;
     	 int args_pushed_int=0;
     	 extractSegVal(curr_command,"call",funcname,args_pushed,&args_pushed_int);
-    	 
+
     	 //push return address
-    	 outFile<<"@label"<<filename<<"_"<<A_LABEL<<endl;
+    	 outFile<<"@label_"<<filename<<"_"<<A_LABEL<<endl;
     	 outFile<<"D=A"<<endl;
     	 outFile<<"@SP"<<endl;
     	 outFile<<"A=M"<<endl;
     	 outFile<<"M=D"<<endl;
     	 outFile<<"@SP"<<endl;
     	 outFile<<"M=M+1"<<endl;
-    	 
+
     	 push_call_subcommands("LCL");
     	 push_call_subcommands("ARG");
     	 push_call_subcommands("THIS");
     	 push_call_subcommands("THAT");
-    	 
+
     	 //compute ARG = SP - n - 5
     	 outFile<<"@SP"<<endl;
     	 outFile<<"D=M"<<endl;
@@ -404,32 +405,32 @@ public:
     	 outFile<<"D=D-A"<<endl;
     	 outFile<<"@ARG"<<endl;
     	 outFile<<"M=D"<<endl;
-			
+
 		//LCL = SP
 		 outFile<<"@SP"<<endl;
 		 outFile<<"D=M"<<endl;
 		 outFile<<"@LCL"<<endl;
 		 outFile<<"M=D"<<endl;
-		 
+
 		 //goto f
 		 outFile<<"@"<<funcname<<endl;
 		 outFile<<"0;JMP"<<endl;
-		 
+
 		 //generate label for calling function
-		 outFile<<"(label"<<filename<<"_"<<A_LABEL<<")"<<endl;
-		 
+		 outFile<<"(label_"<<filename<<"_"<<A_LABEL<<")"<<endl;
+
 		 A_LABEL++;
     }
-    
+
     void WriteReturn(string curr_command){
-    	
+
     	//FRAME = LCL
-    	 outFile<<"@LCL"<<endl;
+  	 outFile<<"@LCL"<<endl;
 		 outFile<<"D=M"<<endl;
 		 outFile<<"@15"<<endl;
 		 outFile<<"M=D"<<endl;
-		 
-		 //RET = *(FRAME _ 5)
+
+		 //RET = *(FRAME - 5)
 		 outFile<<"@5"<<endl;
 		 outFile<<"D=D-A"<<endl;
 		 outFile<<"A=D"<<endl;
@@ -442,7 +443,7 @@ public:
 		outFile<<"M=M-1"<<endl;
 		outFile<<"A=M"<<endl;
 		outFile<<"D=M"<<endl;
-		outFile<<"@ARG"<<endl;		 
+		outFile<<"@ARG"<<endl;
 		outFile<<"A=M"<<endl;
 		outFile<<"M=D"<<endl;
 
@@ -489,7 +490,7 @@ public:
 		outFile<<"A=M"<<endl;
 		outFile<<"0;JMP"<<endl;
 	}
-    
+
 };
 Coder C;
 
@@ -506,17 +507,17 @@ class Parser{
 
 		//sees if needl is present in haystack at specified position
 		bool present(string haystack, string needl, int start,int end){
-		if(needl.size() != (end-start+1)){
-		throw "illegal use of function present";
-		}
-		int j=0;
-		for(int i=start;i<=end;i++){
-		if(haystack[i]!=needl[j]){
-		  return false;
-		}
-		j++;
-		}
-		return true;
+			if(needl.size() != (end-start+1)){
+				throw "illegal use of function present";
+			}
+			int j=0;
+			for(int i=start;i<=end;i++){
+				if(haystack[i]!=needl[j]){
+				  return false;
+				}
+				j++;
+			}
+			return true;
 		}
 
 		//removes spaces
@@ -587,7 +588,7 @@ class Parser{
 			      C.WriteArithmetic(curr_command);
 			      break;
 			      case C_PUSH:
-			      C.WritePush(curr_command);
+			      C.WritePush(curr_command,inputname);
 			      break;
 			      case C_POP:
 			      C.WritePop(curr_command);
@@ -602,7 +603,7 @@ class Parser{
 			      C.WriteIfGoto(curr_command);
 			      break;
 			      case C_FUNCTION:
-			      C.WriteFunction(curr_command);
+			      C.WriteFunction(curr_command,inputname);
 			      break;
 			      case C_RETURN:
 			      C.WriteReturn(curr_command);
@@ -623,14 +624,11 @@ Parser P;
 int main(int argc,char* argv[]){
 	char inputname[100];
 
-	inputFile.open(argv[2],ios::in);
 	outFile.open(argv[1],ios::out);
-	P.ProcessInputFile(argv[2]);
-	inputFile.close();
-	inputFile.open(argv[3],ios::in);
-	P.ProcessInputFile(argv[3]);
+	for(int i=2;i<argc;i++){
+		inputFile.open(argv[i],ios::in);
+		P.ProcessInputFile(argv[i]);
+		inputFile.close();
+	}
 	outFile.close();
-	inputFile.close();
-	
 }
- 
