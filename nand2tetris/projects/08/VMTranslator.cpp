@@ -338,7 +338,7 @@ public:
     	outFile<<"AM=M-1"<<endl;
     	outFile<<"D=M"<<endl;
     	outFile<<"@"<<label<<endl;
-    	outFile<<"D;JGT"<<endl;
+    	outFile<<"D;JNE"<<endl;
     }
 
     //writes function command to outfile
@@ -346,7 +346,6 @@ public:
     	string funcname,lcl_vars;
 	 	int lcl_vars_int=0;
 		extractSegVal(curr_command,"function",funcname,lcl_vars,&lcl_vars_int);
-		funcname = filename + "$" + funcname;
 		//create label for funcname
 		outFile<<"("<<funcname<<")"<<endl;
 
@@ -402,7 +401,7 @@ public:
 		 outFile<<"M=D"<<endl;
 
 		 //goto f
-		 outFile<<"@"<<filename<<"$"<<funcname<<endl;
+		 outFile<<"@"<<funcname<<endl;
 		 outFile<<"0;JMP"<<endl;
 
 		 //generate label for calling function
@@ -435,8 +434,7 @@ public:
 		outFile<<"M=D"<<endl;
 
 		//SP = ARG+1
-		outFile<<"A=A+1"<<endl;
-		outFile<<"D=A"<<endl;
+		outFile<<"D=A+1"<<endl;
 		outFile<<"@SP"<<endl;
 		outFile<<"M=D"<<endl;
 
@@ -615,18 +613,12 @@ int findlength(char arr[]){
 	return i;
 }
 int main(int argc,char* argv[]){
-	char *inputname;
+	char inputname[100];
 
 	outFile.open(argv[1],ios::out);
-	inputname = (char *)malloc(100*sizeof(char));
 	for(int i=2;i<argc;i++){
-		inputname = argv[i];
-		int x = findlength(inputname);
-		inputname[x] = '.';
-		inputname[x+1] = 'v';
-		inputname[x+2] = 'm';
-		inputname[x+3] = '\0';
-		inputFile.open(inputname,ios::in);
+		// inputname = argv[i];
+		inputFile.open(argv[i],ios::in);
 		P.ProcessInputFile(argv[i]);
 		inputFile.close();
 	}

@@ -16,7 +16,7 @@
 
 using namespace std;
 
-#define MAX_ADDRESS 100000
+// #define MAX_ADDRESS 100000
 #define MAX_SYMBOL_LENGTH 40
 #define MAX_SYMBOL_TABLE_ENTRIES 1024
 
@@ -30,7 +30,6 @@ class SymbolTableEntry{
 	  string symbolname;
 	  int address;
 
-	
 		//constructor
 		SymbolTableEntry(){
 		    symbolname = "";
@@ -55,7 +54,7 @@ class SymbolTableEntry{
 
 		//updates address of the symbol if it doesn't exist
 		void UpdateAddress(const int addr){
-		    if(addr <= MAX_ADDRESS && AddrAssigned()==false)
+		    if(AddrAssigned()==false)
 		      address = addr;
 		}
 
@@ -77,8 +76,8 @@ class SymbolTableEntry{
 		    }
 		    else{
 		    	UpdateName(name);
-		    	UpdateAddress(addr);	
-		    }  
+		    	UpdateAddress(addr);
+		    }
 		 }
 
 		//to view an entry
@@ -91,6 +90,7 @@ class SymbolTable{
 	private:
 	    SymbolTableEntry symboltable[MAX_SYMBOL_TABLE_ENTRIES];
 	    int curr_symbols;
+			int curr_no = 16;
 	public:
 	    //loads the default values
 	    SymbolTable(){
@@ -120,37 +120,6 @@ class SymbolTable{
 	      curr_symbols = 23;
 	    }
 
-	    void change(int instruction_count){
-	    	// cout<<instruction_count<<endl;
-	    	int lim = max(instruction_count,24576);
-	    	cout<<lim<<endl;
-	    	bool AddrArr[lim+1];
-	    	int x=0;
-	    	for(int i=0;i<=lim;i++){
-	    		AddrArr[i] = false;
-	    	}
-	    	for(int i=0;i<curr_symbols;i++){
-	    		if(symboltable[i].AddrAssigned()){
-	    			// cout<<symboltable[i].address<<endl;	
-	    			AddrArr[symboltable[i].address] = true;
-	    		}
-	    	}
-	    	for(int i=16;i<=lim;i++){
-	    		if(!AddrArr[i])
-	    			x = i;
-	    			break;
-	    			// cout<<x<<endl;
-	    	}
-	    	for(int i=0;i<curr_symbols;i++){
-	    		if(!symboltable[i].AddrAssigned()){
-	    			symboltable[i].UpdateAddress(x);
-	    			x++;
-	    			while(x<=lim && AddrArr[x]){
-	    				x++;
-	    			}
-	    		}
-	    	}
-	    }
 	  //checks if the symbol is already present else returns -1
 	    int SymbolPresent(const string name){
 	      for(int i=0;i<curr_symbols;i++){
@@ -181,7 +150,16 @@ class SymbolTable{
 	      // ViewTable();
 	      // cout<<endl;
 	    }
-
+			int NextAddr(){
+				for(int i=curr_no;1;i++){
+					if(!symboltable[i].AddrAssigned()){
+						curr_no = i;
+						return curr_no;
+					}
+				}
+				cout<<"MAX_SYMBOL_LIMIT_REACHED"<<endl;
+				return -1;
+			}
 	  //updates the address of the symbol table and will only be called if a label is found
 	    void AddLabel(const string name,const int addr){
 	      int pos = SymbolPresent(name);
@@ -242,19 +220,19 @@ class Parser{
 	}
 
 	//resolves symbol and checks for a label or address and sets label for writing in interfile
-    void ResolveSymbol(){
+    void ResolveLabel(){
     	// cout<<curr_command<<endl;
 	    string addr;
-	    if(curr_command[0] == '@'){
-	      addr.append(curr_command,1,curr_command.size()-1);
-	      // cout<<addr<<endl;
-	      if((!(addr[0]>='0' && addr[0]<='9'))){
-	      	// cout<<addr<<endl;
-	        S.CheckName(addr);
-	      }
-	      instruction_count++;
-	    }
-	    else{
+	    // if(curr_command[0] == '@'){
+	    //   addr.append(curr_command,1,curr_command.size()-1);
+	    //   // cout<<addr<<endl;
+	    //   if((!(addr[0]>='0' && addr[0]<='9'))){
+	    //   	// cout<<addr<<endl;
+	    //     S.CheckName(addr);
+	    //   }
+	    //   instruction_count++;
+	    // }
+	    // else{
 	      if(curr_command[0] == '('){
 	        addr.append(curr_command,1,curr_command.size()-2);
 	        // cout<<addr<<endl;
@@ -266,8 +244,8 @@ class Parser{
 	      else{
 	      	instruction_count++;
 	      }
-	    }
-	    
+	    // }
+
     }
 
 	//processes input file to create inter file
@@ -285,7 +263,7 @@ class Parser{
 	        // cout<<"comments removed"<<endl;
 	        if(f==0){
 	        	// cout<<i<<endl;
-	        	ResolveSymbol();
+	        	ResolveLabel();
 	        	// cout<<i<<endl;
 	        	if(notlabel)
 	        		interFile << curr_command <<endl;
@@ -293,12 +271,9 @@ class Parser{
 	          	// instruction_count++;
 	        }
 	      }
-	      // cout<<i<<endl;
 	      curr_command.clear();
 	      curr_line.clear();
 	    }
-	    S.change(instruction_count);
-	    // cout<<i<<endl;
   	}
 };
 
@@ -306,13 +281,11 @@ Parser P;
 
 //converts decimal string to 15 bit binary
 string convertto15bitbinary(string inp){
-	// cout<<inp.size()<<endl;
 	int no=0;
 	int l = inp.size();
 	for(int i=0;i<l;i++){
-		no += (inp[i]-'0')*int(pow(10,(l-i-1))); 
+		no += (inp[i]-'0')*int(pow(10,(l-i-1)));
 	}
-	// cout<<(no)<<endl;
 	return std::bitset< 16 >( no ).to_string();
 }
 
@@ -325,6 +298,16 @@ class Converter{
 
 
 	//converts Address string to binary
+	int ResolveAddress(string check){
+		int val = S.SymbolPresent(check);
+		if(val == -1){
+			S.AddLabel(check,S.NextAddr());
+			return S.RamAdrress(check);
+		}
+		else{
+			return S.RamAdrress(check);
+		}
+	}
 	void AddressConverter(){
 		string check;
 	 	check.append(curr_command,1,curr_command.size()-1);
@@ -332,7 +315,8 @@ class Converter{
 			result = convertto15bitbinary(check);
 		}
 		else{
-			result = std::bitset< 16 >( S.RamAdrress(check) ).to_string();
+			int val = ResolveAddress(check);
+			result = std::bitset< 16 >( val ).to_string();
 		}
 		// cout<<result<<endl;
 	}
@@ -548,7 +532,7 @@ class Converter{
 
 Converter C;
 int main(int arc,char *argv[]){
-  
+
   // S.Initialize();
   inputFile.open(argv[1],ios::in);
   interFile.open("interfile.txt",ios::out);
@@ -565,11 +549,11 @@ int main(int arc,char *argv[]){
   interFile.open("interfile.txt",ios::in);
 
   C.ProcessInterFile();
-  
+
   cout<<"Pass 2 completed\n";
   cout<<"Assembling successfull\n";
   interFile.close();
   outFile.close();
-  // remove("interfile.txt");
+  remove("interfile.txt");
   // S.ViewTable();
 }
