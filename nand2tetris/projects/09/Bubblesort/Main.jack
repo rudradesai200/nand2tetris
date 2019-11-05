@@ -1,0 +1,17 @@
+class Main{
+	function void main() {
+		var Bubblesort b;
+
+		let b = Bubblesort.init(5);
+
+		do b.addElement(3);
+		do b.addElement(6);
+		do b.addElement(2);
+		do b.addElement(4);
+		do b.addElement(8);
+		
+		do b.sort();
+		do b.vecprint();
+		return ;
+	}
+}

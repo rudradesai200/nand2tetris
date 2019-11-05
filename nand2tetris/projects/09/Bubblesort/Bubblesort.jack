@@ -1,0 +1,53 @@
+class Bubblesort {
+	field Array vec;
+	field int si;
+	field int curr_size;
+
+	constructor Bubblesort init(int N){ 
+		let si = N;
+		let curr_size = 0;
+		let vec = Array.new(N);
+		return this;
+	}
+	method void sort(){
+		var int i,j;
+		let i = 0;
+	
+		while( i < (curr_size - 1)){
+			let j = 0;		
+			while(j < (curr_size - i - 1)){
+				if(vec[j] > vec[j+1]){
+					do swap(j,j+1);
+				}
+				let j = j+1;			
+			}
+			let i = i+1;
+		}
+		return ;
+	}
+	method void addElement(int a) {
+		if( curr_size < si){
+			let vec[curr_size] = a;
+			let curr_size = curr_size + 1;
+		}
+		return;
+	}
+	method void swap(int a,int b){
+		var int temp;
+		let temp = vec[a];
+		let vec[a] = vec[b];
+		let vec[b] = temp;
+		return ;
+	}
+
+	method void vecprint(){
+		var int i;
+		let i = 0;
+		while( i < curr_size){
+			do Output.printInt(vec[i]);
+			do Output.printString(" ");
+			let i = i + 1;
+		}
+		return ;
+	}
+}
