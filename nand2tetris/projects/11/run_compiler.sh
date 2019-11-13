@@ -9,7 +9,7 @@
 # No compilation command is needed in case of Python, hence leave it blank.
 
 ###########FILL YOUR COMMAND HERE############
-g++ compiler.cpp -o compiler
+g++ compiler.cpp -std=c++11 -o compiler
 #############################################
 
 
@@ -26,5 +26,5 @@ echo $* # Prints all command line arguments passed to this bash script
 #<your_compiler> $*
 ##########FILL YOUR COMMAND HERE#############
 ./compiler $*
-#rm *.xml
+rm *.xml
 #############################################

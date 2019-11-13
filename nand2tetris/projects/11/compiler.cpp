@@ -638,7 +638,7 @@ class SyntaxCheck{
 				vmFile<<"function "<<classname<<"."<<ST->currSubName<<" "<<ST->Lcl_count<<endl;
 				// outFile<<curr_line<<endl;
 				if(ST->currSubType == Constructor){
-					vmFile<<"push argument 0"<<endl;
+					vmFile<<"push constant "<<CT->Field_count<<endl;
 					vmFile<<"call Memory.alloc 1"<<endl;
 					vmFile<<"pop pointer 0"<<endl;
 				}
@@ -808,7 +808,7 @@ class SyntaxCheck{
 			if(checkSymbol("-",true,true,false)){
 				outFile<<"<term>"<<endl;
 				outFile<<curr_line<<endl;
-				op1 = "-";
+				op1 = "neg";
 				int check = compileTerm();
 				//add the code generation one here
 				if(check > 0){
@@ -826,7 +826,7 @@ class SyntaxCheck{
 			else if(checkSymbol("~",true,true,false)){
 				outFile<<"<term>"<<endl;
 				outFile<<curr_line<<endl;
-				op1 = "~";
+				op1 = "not";
 				int check = compileTerm();
 				//add the code generation one here
 				if(check > 0){
@@ -901,11 +901,11 @@ class SyntaxCheck{
 					if(var.Index == -1){
 						// cout<<id1<<endl;
 						f = 2;
-						if(!(p.second == "Array" || p.second == "Output" || p.second == "Keyboard" || p.second == "Screen" || p.second == "Memory" || p.second == "Sys"))
-						{
-							errFile<<"Declaration error: "<<p.second<<" undeclared"<<endl;
-							return false;
-						}
+						// if(!(p.second == "Array" || p.second == "Output" || p.second == "Keyboard" || p.second == "Screen" || p.second == "Memory" || p.second == "Sys"))
+						// {
+						// 	errFile<<"Declaration error: "<<p.second<<" undeclared"<<endl;
+						// 	return false;
+						// }
 					}
 				}
 				p = extracttokens();
@@ -960,7 +960,7 @@ class SyntaxCheck{
 						if(p.first == "identifier"){
 							id2 = p.second;
 							if(f == 1){
-								vmFile<<"push "<<kindmap[var.Kind]<<" "<<var.Type<<endl;
+								vmFile<<"push "<<kindmap[var.Kind]<<" "<<var.Index<<endl;
 							}
 							outFile<<curr_line<<endl;
 							if(checkSymbol("(",false,false,true)){
@@ -1179,7 +1179,7 @@ class SyntaxCheck{
 							p = extracttokens();
 							if(!compileStatements()){return false;}
 							if(checkSymbol("}",true,false,true)){
-								vmFile<<"goto "<<classname<<'.'<<Tlabelnum+1<<endl;
+								vmFile<<"goto "<<classname<<'.'<<(Tlabelnum+1)<<endl;
 								vmFile<<"label "<<classname<<"."<<Tlabelnum<<endl;
 								p = extracttokens();
 								if(p.first == "keyword" && p.second == "else"){
@@ -1200,6 +1200,7 @@ class SyntaxCheck{
 								}
 								else{
 									// cout<<p.second<<endl;
+									vmFile<<"label "<<classname<<"."<<(Tlabelnum + 1)<<endl;
 									return true;
 								}
 							}
@@ -1227,7 +1228,7 @@ class SyntaxCheck{
 				if((check = compileExpression()) > 0){
 					if(checkSymbol(")",true,false,true)){
 						vmFile<<"not"<<endl;
-						vmFile<<"if-goto "<<classname<<"."<<Tlabelnum+1<<endl;
+						vmFile<<"if-goto "<<classname<<"."<<(Tlabelnum + 1)<<endl;
 						if(checkSymbol("{",false,false,true)){
 							p = extracttokens();
 							if(!compileStatements()){return false;}
@@ -1271,7 +1272,7 @@ class SyntaxCheck{
 								}
 							}
 							if(f == 1){
-								vmFile<<"push "<<kindmap[var.Kind]<<" "<<var.Type<<endl;
+								vmFile<<"push "<<kindmap[var.Kind]<<" "<<var.Index<<endl;
 							}
 							if(checkSymbol("(",false,false,true)){
 								int nP = compileExpressionList();
@@ -1404,7 +1405,7 @@ int main(int argc, char *argv[]) {
 		inputFile.close();
 		outFile.close();
 
-		kindmap[Field] = "field";
+		kindmap[Field] = "this";
 		kindmap[Static] = "static";
 		kindmap[Local] = "local";
 		kindmap[Argument] = "argument";
