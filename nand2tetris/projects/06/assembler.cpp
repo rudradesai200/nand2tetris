@@ -91,6 +91,7 @@ class SymbolTable{
 	    SymbolTableEntry symboltable[MAX_SYMBOL_TABLE_ENTRIES];
 	    int curr_symbols;
 			int curr_no = 16;
+			int next_addr = 16;
 	public:
 	    //loads the default values
 	    SymbolTable(){
@@ -151,14 +152,7 @@ class SymbolTable{
 	      // cout<<endl;
 	    }
 			int NextAddr(){
-				for(int i=curr_no;1;i++){
-					if(!symboltable[i].AddrAssigned()){
-						curr_no = i;
-						return curr_no;
-					}
-				}
-				cout<<"MAX_SYMBOL_LIMIT_REACHED"<<endl;
-				return -1;
+				return next_addr++;
 			}
 	  //updates the address of the symbol table and will only be called if a label is found
 	    void AddLabel(const string name,const int addr){
