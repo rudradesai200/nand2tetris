@@ -285,7 +285,7 @@ class class_symbol_table {
 				if (varkind == Field) {
 					varind = Field_count++;
 				} else {
-					varind = Static_count++;;
+					varind = Static_count++;
 				}
 				Total_count++;
 				CT.push_back(symbol_table_entry(varname, varkind, vartype, varind));
@@ -338,6 +338,8 @@ class subroutine_symbol_table {
 			return symbol_table_entry("NULL", NONETYPE, "NULL", -1);
 		}
 };
+
+
 class SyntaxCheck {
 	public:
 		string curr_token;
